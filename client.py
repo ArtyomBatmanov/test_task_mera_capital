@@ -13,7 +13,7 @@ async def fetch_price(ticker: str):
                 price = data['result']['index_price']
                 timestamp = data['usIn']
                 print(f"Current {ticker.upper()} price: {price}, Timestamp: {timestamp}")
-                save_price(ticker, price, timestamp)
+                await save_price(ticker, price, timestamp)
             else:
                 print(f"Failed to fetch price for {ticker}. Status code: {response.status}")
 
@@ -26,4 +26,3 @@ async def fetch_all_prices():
         await asyncio.sleep(60)
 
 
-asyncio.run(fetch_all_prices())

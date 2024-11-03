@@ -1,46 +1,45 @@
-import sqlite3
-from typing import List, Dict, Optional
+from databases import Database
+from datetime import datetime
 
-conn = sqlite3.connect('prices.db', check_same_thread=False)
-cursor = conn.cursor()
+DATABASE_URL = "sqlite:///./prices.db"
 
-cursor.execute("""
+database = Database(DATABASE_URL)
+
+# Создание таблицы цен
+async def create_price_table():
+    query = """
     CREATE TABLE IF NOT EXISTS prices (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        ticker TEXT NOT NULL,
-        price REAL NOT NULL,
-        timestamp INTEGER NOT NULL
+        id INTEGER PRIMARY KEY,
+        ticker TEXT,
+        price REAL,
+        timestamp INTEGER
     )
-""")
-conn.commit()
+    """
+    await database.execute(query)
 
+# Сохранение цены
+async def save_price(ticker: str, price: float, timestamp: int):
+    query = "INSERT INTO prices (ticker, price, timestamp) VALUES (:ticker, :price, :timestamp)"
+    await database.execute(query, {"ticker": ticker, "price": price, "timestamp": timestamp})
 
-def save_price(ticker: str, price: float, timestamp: int):
-    cursor.execute("INSERT INTO prices (ticker, price, timestamp) VALUES (?, ?, ?)", (ticker, price, timestamp))
-    conn.commit()
+# Получение всех цен
+async def get_all_prices():
+    query = "SELECT * FROM prices"
+    return await database.fetch_all(query)
 
+# Получение цен за промежуток времени
+async def get_prices_in_range(start: int, end: int):
+    query = """
+    SELECT * FROM prices
+    WHERE timestamp BETWEEN :start AND :end
+    """
+    return await database.fetch_all(query, {"start": start, "end": end})
 
-def get_all_prices(ticker: str) -> List[Dict]:
-    cursor.execute("SELECT ticker, price, timestamp FROM prices WHERE ticker = ?", (ticker,))
-    rows = cursor.fetchall()
-    return [{"ticker": row[0], "price": row[1], "timestamp": row[2]} for row in rows]
-
-
-def get_last_price(ticker: str) -> Optional[Dict]:
-    cursor.execute("SELECT ticker, price, timestamp FROM prices WHERE ticker = ? ORDER BY timestamp DESC LIMIT 1",
-                   (ticker,))
-    row = cursor.fetchone()
-    if row:
-        return {"ticker": row[0], "price": row[1], "timestamp": row[2]}
-    return None
-
-
-def get_prices_by_date(ticker: str, date_from: int, date_to: int) -> List[Dict]:
-    cursor.execute("""
-        SELECT ticker, price, timestamp 
-        FROM prices 
-        WHERE ticker = ? AND timestamp BETWEEN ? AND ? 
-        ORDER BY timestamp
-    """, (ticker, date_from, date_to))
-    rows = cursor.fetchall()
-    return [{"ticker": row[0], "price": row[1], "timestamp": row[2]} for row in rows]
+# Получение последней цены для конкретного тикера
+async def get_last_price(ticker: str):
+    query = """
+    SELECT * FROM prices
+    WHERE ticker = :ticker
+    ORDER BY timestamp DESC LIMIT 1
+    """
+    return await database.fetch_one(query, {"ticker": ticker})

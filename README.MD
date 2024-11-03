@@ -38,8 +38,7 @@ https://github.com/ArtyomBatmanov/test_task_mera_capital.git
 ``
 2) Запустите Docker контейнер
 ``
-docker compose build
-docker compose up
+docker-compose up --build
 ``
 3) Описание endpoint'ов
 - GET /prices - получение всех цен заданного тикера

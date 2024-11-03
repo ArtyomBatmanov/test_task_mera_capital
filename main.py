@@ -1,4 +1,3 @@
-
 from fastapi import FastAPI, HTTPException, Query
 from typing import List
 from client import fetch_all_prices
@@ -7,31 +6,27 @@ import asyncio
 
 app = FastAPI()
 
-# Подключение к БД при запуске
 @app.on_event("startup")
 async def startup():
     await database.connect()
-    await create_price_table()  # Создаем таблицу, если еще нет
-    asyncio.create_task(fetch_all_prices())  # Запускаем сбор данных в фоне
+    await create_price_table()
+    asyncio.create_task(fetch_all_prices())
 
-# Отключение от БД при завершении
+
 @app.on_event("shutdown")
 async def shutdown():
     await database.disconnect()
 
-# Endpoint для получения всей истории цен
 @app.get("/prices", response_model=List[dict])
-async def get_price_history():
-    prices = await get_all_prices()
+async def get_price_history(ticker: str):
+    prices = await get_all_prices(ticker)
     return [dict(price) for price in prices]
 
-# Endpoint для получения цен за определенный промежуток времени
 @app.get("/prices/range")
-async def get_prices_by_range(start: int = Query(...), end: int = Query(...)):
-    prices = await get_prices_in_range(start, end)
+async def get_prices_by_range(ticker: str, start: int = Query(...), end: int = Query(...)):
+    prices = await get_prices_in_range(ticker, start, end)
     return [dict(price) for price in prices]
 
-# Endpoint для получения последней цены
 @app.get("/prices/latest")
 async def get_latest_price(ticker: str):
     price = await get_last_price(ticker)

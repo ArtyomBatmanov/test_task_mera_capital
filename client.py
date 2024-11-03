@@ -2,6 +2,7 @@ import aiohttp
 import asyncio
 from database import save_price
 
+
 async def fetch_price(ticker: str):
     url = "https://www.deribit.com/api/v2/public/get_index_price"
     params = {"index_name": ticker}
@@ -17,6 +18,7 @@ async def fetch_price(ticker: str):
             else:
                 print(f"Failed to fetch price for {ticker}. Status code: {response.status}")
 
+
 async def fetch_all_prices():
     while True:
         await asyncio.gather(
@@ -24,5 +26,3 @@ async def fetch_all_prices():
             fetch_price("eth_usd")
         )
         await asyncio.sleep(60)
-
-
